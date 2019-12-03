@@ -50,6 +50,7 @@ void setup() {
   motors.setSpeeds(0,0);
   digitalWrite(13, LOW); // Turn off LED to indicate we are through with calibration
   buzzer.play(">g32>>c32"); // Necessary
+  Serial.println("Calibration complete.");
   button.waitForButton(); // Wait for the user button to be pressed and released
   buzzer.play("L16 cdegreg4"); // Necessary
   while(buzzer.isPlaying()); // Necessary
@@ -88,7 +89,6 @@ void loop() {
       motors.setSpeeds(m1Speed, m2Speed);
       position_check = reflectanceSensors.readLine(sensors);
       error_check = position_check - 2500;
-      Serial.println(error_check);
     }
     delay(400);
   }
