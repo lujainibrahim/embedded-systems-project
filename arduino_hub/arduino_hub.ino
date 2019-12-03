@@ -3,7 +3,13 @@
 #define ADDR_1 0x10 // (Me)
 #define ADDR_2 0x20
 
-int receivedVal = 0; // Received over I2C
+int greenBool_L = 0; // Received over I2C
+int greenBool_R = 0; // Received over I2C
+
+enum { // Commands to Sensors
+  COLOUR_L = 1,
+  COLOUR_R  = 2
+};
 
 ZumoBuzzer buzzer;
 ZumoReflectanceSensorArray reflectanceSensors;
@@ -15,13 +21,19 @@ int lastError = 0;
 // (400 lets the motors go at top speed; decrease to impose a speed limit)
 const int MAX_SPEED = 400;
 
-void setup() {
-  Serial.begin(9600);
+void readSensor(const byte command, const int responseSize) {
+  Wire.beginTransmission(ADDR_2);
+  Wire.write(command);
+  Wire.endTransmission();
+  Wire.requestFrom (ADDR_2, responseSize); 
+}
 
+void setup() {
+  /* Serial */
+  Serial.begin(9600);
     /* I2C */
   Wire.begin(ADDR_1);
-  Wire.onReceive(receiveEvent);
-  
+  /* Zumo Shield */
   // Play a little welcome song
   buzzer.play(">g32>>c32");
 
@@ -67,6 +79,7 @@ void setup() {
 }
 
 void loop() {
+  /* Zumo Shield */
   unsigned int sensors[6];
 
   // Get the position of the line.  Note that we *must* provide the "sensors"
@@ -111,11 +124,17 @@ void loop() {
 
   motors.setSpeeds(m1Speed, m2Speed);
 
-  if (receivedVal == 1) {
+  /* Colour Sensor (Left) */
+
+  /* Colour Sensor (Right) */
+  readSensor(COLOUR_R, 1);
+  greenBool_R = Wire.read(); 
+  if (greenBool_R == 1) {
+    Serial.println("GOT HERE");
     int position_check = reflectanceSensors.readLine(sensors);
     int error_check = position_check - 2500;
     while(error_check < -400) {
-      m1Speed = 100;
+      m1Speed = 100; // Fixed Speed
       m2Speed = 0;
       motors.setSpeeds(m1Speed, m2Speed);
       position_check = reflectanceSensors.readLine(sensors);
@@ -123,10 +142,4 @@ void loop() {
       Serial.println(error_check);
     }
   }
-}
-
-void receiveEvent(int howMany){
- while (Wire.available() > 0){
-   receivedVal = Wire.read();
- }
 }

@@ -34,14 +34,14 @@ void loop() {
   /* Colour Sensor (Left) */
   
   /* Colour Sensor (Right) */
-  uint16_t r, g, b, c;
-  float average, red, green, blue;
-  tcs_R.getRawData(&r, &g, &b, &c);
-  average= (r+g+b)/3;
-  red= r/average;
-  green= g/average;
-  blue= b/average;
-  if ((red < 0.95) && (green >= 1.3) && (blue <= 0.95)) {
+  uint16_t r_R, g_R, b_R, c_R;
+  float average_R, red_R, green_R, blue_R;
+  tcs_R.getRawData(&r_R, &g_R, &b_R, &c_R);
+  average_R = (r_R+g_R+b_R)/3;
+  red_R = r_R/average_R;
+  green_R = g_R/average_R;
+  blue_R = b_R/average_R;
+  if ((red_R < 0.95) && (green_R >= 1.3) && (blue_R <= 0.95)) {
     greenBool_R = 1;
     Serial.println("Green!");
   } else {
@@ -55,7 +55,7 @@ void receiveEvent (int howMany) {
 
 void requestEvent() {
   switch (command) {
-     case COLOUR_L: Wire.write(greenBool_L); break;   // send our ID 
-     case COLOUR_R: Wire.write(greenBool_R); break;  // send A0 value
-     }
+     case COLOUR_L: Wire.write(greenBool_L); break;
+     case COLOUR_R: Wire.write(greenBool_R); break;
   }
+}
