@@ -17,7 +17,7 @@ ZumoMotors motors;
 Pushbutton button(ZUMO_BUTTON);
 int lastError = 0;
 
-const int MAX_SPEED = 10; // Maximum Speed
+const int MAX_SPEED = 400; // Maximum Speed
 
 void readSensor(const byte command, const int responseSize) {
   Wire.beginTransmission(ADDR_2);
