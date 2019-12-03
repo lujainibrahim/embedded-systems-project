@@ -17,9 +17,7 @@ ZumoMotors motors;
 Pushbutton button(ZUMO_BUTTON);
 int lastError = 0;
 
-// This is the maximum speed the motors will be allowed to turn.
-// (400 lets the motors go at top speed; decrease to impose a speed limit)
-const int MAX_SPEED = 400;
+const int MAX_SPEED = 10; // Maximum Speed
 
 void readSensor(const byte command, const int responseSize) {
   Wire.beginTransmission(ADDR_2);
@@ -33,6 +31,7 @@ void setup() {
   Serial.begin(9600);
     /* I2C */
   Wire.begin(ADDR_1);
+  buzzer.play(">g32>>c32"); // Necessary
   /* Zumo Shield */
   reflectanceSensors.init(); // Initialize reflectance sensor
   button.waitForButton(); // Wait for the user button to be pressed and released
@@ -50,7 +49,10 @@ void setup() {
   }
   motors.setSpeeds(0,0);
   digitalWrite(13, LOW); // Turn off LED to indicate we are through with calibration
+  buzzer.play(">g32>>c32"); // Necessary
   button.waitForButton(); // Wait for the user button to be pressed and released
+  buzzer.play("L16 cdegreg4"); // Necessary
+  while(buzzer.isPlaying()); // Necessary
 }
 
 void loop() {
@@ -78,7 +80,6 @@ void loop() {
   readSensor(COLOUR_R, 1);
   greenBool_R = Wire.read(); 
   if (greenBool_R == 1) {
-    Serial.println("GOT HERE");
     int position_check = reflectanceSensors.readLine(sensors);
     int error_check = position_check - 2500;
     while(error_check < -400) {
@@ -89,5 +90,6 @@ void loop() {
       error_check = position_check - 2500;
       Serial.println(error_check);
     }
+    delay(400);
   }
 }
