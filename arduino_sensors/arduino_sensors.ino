@@ -3,15 +3,17 @@
 #define ADDR_1 0x10
 #define ADDR_2 0x20 // (Me)
 
-Adafruit_TCS34725 tcs_R = Adafruit_TCS34725(); // Colour Sensor (Right)
-char command;
-int greenBool_L = 0; // Left Sensor
-int greenBool_R = 0; // Right Sensor
-
+/* I2C */
 enum { // Commands from Hub
   COLOUR_L = 1,
   COLOUR_R  = 2
 };
+
+/* Colour Sensor (Right) */
+Adafruit_TCS34725 tcs_R = Adafruit_TCS34725(); // Colour Sensor (Right)
+char command;
+int greenBool_L = 0; // Left Sensor
+int greenBool_R = 0; // Right Sensor
 
 void setup() {
   /* Serial */
