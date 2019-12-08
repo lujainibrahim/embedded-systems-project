@@ -12,8 +12,8 @@ enum { // Commands from Hub
 /* Colour Sensor (Right) */
 Adafruit_TCS34725 tcs_R = Adafruit_TCS34725(); // Colour Sensor (Right)
 char command;
-int greenBool_L = 0; // Left Sensor
-int greenBool_R = 0; // Right Sensor
+char greenBool_L; // Left Sensor
+char greenBool_R; // Right Sensor
 
 void setup() {
   /* Serial */
@@ -44,10 +44,11 @@ void loop() {
   green_R = g_R/average_R;
   blue_R = b_R/average_R;
   if ((red_R < 0.95) && (green_R >= 1.3) && (blue_R <= 0.95)) {
-    greenBool_R = 1;
+    greenBool_R = 'R';
     Serial.println("Green!");
   } else {
-    greenBool_R = 0;
+    greenBool_R = 'N';
+    Serial.println("Not Green!");
   }
 }
 

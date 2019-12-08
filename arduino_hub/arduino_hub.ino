@@ -3,8 +3,8 @@
 #define ADDR_1 0x10 // (Me)
 #define ADDR_2 0x20
 
-int greenBool_L = 0; // Received over I2C
-int greenBool_R = 0; // Received over I2C
+char greenBool_L = 'N'; // Received over I2C
+char greenBool_R = 'N'; // Received over I2C
 
 enum { // Commands to Sensors
   COLOUR_L = 1,
@@ -17,13 +17,18 @@ ZumoMotors motors;
 Pushbutton button(ZUMO_BUTTON);
 int lastError = 0;
 
-const int MAX_SPEED = 400; // Maximum Speed
+const int MAX_SPEED = 200; // Maximum Speed
 
 void readSensor(const byte command, const int responseSize) {
   Wire.beginTransmission(ADDR_2);
   Wire.write(command);
-  Wire.endTransmission();
-  Wire.requestFrom (ADDR_2, responseSize); 
+  int status = Wire.endTransmission();
+  if (status != 0) {
+    digitalWrite(13, HIGH);
+  } else {
+    digitalWrite(13, LOW);
+  }
+  Wire.requestFrom(ADDR_2, responseSize); 
 }
 
 void setup() {
@@ -79,17 +84,14 @@ void loop() {
 
   /* Colour Sensor (Right) */
   readSensor(COLOUR_R, 1);
-  greenBool_R = Wire.read(); 
-  if (greenBool_R == 1) {
-    int position_check = reflectanceSensors.readLine(sensors);
-    int error_check = position_check - 2500;
-    while(error_check < -400) {
-      m1Speed = 100; // Fixed Speed
+  if (Wire.available() != 0) {
+    greenBool_R = Wire.read(); 
+    if (greenBool_R == 'R') {
+      delay(50); // Initial Wait
+      m1Speed = 300; // Fixed Speed
       m2Speed = 0;
       motors.setSpeeds(m1Speed, m2Speed);
-      position_check = reflectanceSensors.readLine(sensors);
-      error_check = position_check - 2500;
+      delay(450); // Turn Time
     }
-    delay(400);
   }
 }
