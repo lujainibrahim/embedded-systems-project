@@ -72,7 +72,7 @@ void loop() {
   greenBool_R = readSensor(COLOUR_R, 1);
   
   /* Left Turn */
-  if (greenBool_L == 1 && greenBool_R == 0) { // Left Turn
+  if (greenBool_L == 1 && greenBool_R == 0) {
     motors.setSpeeds(0, 0);
     int check_R = 0;
     for (int i = 0; i < 20; i++) {
@@ -127,7 +127,7 @@ void reverseMove() { // MAX_SPEED = 140
   delay(2550);
 }
 
-int readSensor(const byte command, const int responseSize) {
+int readSensor(const byte command, const int responseSize) { 
   int value = 0;
   Wire.beginTransmission(ADDR_2);
   Wire.write(command);
