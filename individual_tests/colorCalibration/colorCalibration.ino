@@ -2,8 +2,8 @@
 #define S1 5
 #define S2 6
 #define S3 3
-#define sensor1Out 8
-#define sensor2Out 9
+#define sensor1Out 9
+#define sensor2Out 8
 
 void setup() {
   /* Serial */
@@ -16,26 +16,7 @@ void setup() {
   pinMode(sensor2Out, INPUT);
   digitalWrite(S0,HIGH); 
   digitalWrite(S1,LOW);
-  Serial.println("Ready. Enter 'G' to continue.");
-  waitChar('G');
-  
-  // Red
-  setRed();
-  colorRange();
-  Serial.println("Red done! Enter 'G' to continue.");
-  waitChar('G');
-
-  // Green
-  setGreen();
-  colorRange();
-  Serial.println("Green done! Enter 'G' to continue.");
-  waitChar('G');
-
-  // Blue
-  setBlue();
-  colorRange();
-  Serial.println("Blue done! Enter 'G' to continue.");
-  waitChar('G');
+  calibrateColor();
 }
 
 void loop() {
@@ -79,20 +60,45 @@ void sortAscend(int arr[], int arrSize) {
   }
 }
 
-void colorRange() {
+void getMinMax() {
+  Serial.println("Reading...");
+  int reading[500];
+  for (int j = 0; j < 500; j++) {
+    reading[j] = pulseIn(sensor1Out, LOW);
+    Serial.println(reading[j]);
+  }
+  sortAscend(reading, 500);
+  Serial.println("Maximum: ");
+  Serial.println(reading[499]);
+  Serial.println(" Minimum: ");
+  Serial.println(reading[0]);
+}
+
+void calibrateColor() {
   for (int i = 0; i < 5; i++) {
-    Serial.println("Reading...");
-    int reading[500];
-    for (int j = 0; j < 500; j++) {
-      reading[j] = pulseIn(sensor1Out, LOW);
-      Serial.println(reading[j]);
-    }
-    sortAscend(reading, 500);
-    Serial.println("Maximum: ");
-    Serial.println(reading[499]);
-    Serial.println(" Minimum: ");
-    Serial.println(reading[0]);
-    Serial.println("Enter 'G' to continue.");
+    Serial.println("Place the next color under the sensor. Enter 'G' to continue.");
     waitChar('G');
+    for (int color = 0; color < 3; color++) {
+      switch(color) {
+        case 0: // Red
+          Serial.println("R: Enter 'G' to continue.");
+          waitChar('G');
+          setRed();
+          getMinMax();
+          break;
+        case 1: // Green
+          Serial.println("G: Enter 'G' to continue.");
+          waitChar('G');
+          setGreen();
+          getMinMax();
+          break;
+        case 2: // Blue
+          Serial.println("B: Enter 'G' to continue.");
+          waitChar('G');
+          setBlue();
+          getMinMax();
+          break;
+      }
+    }
   }
 }
