@@ -13,8 +13,8 @@ enum { // Commands from Hub
 #define S1 5
 #define S2 6
 #define S3 3
-#define sensor1Out 8
-#define sensor2Out 9
+#define sensor1Out 9
+#define sensor2Out 8
 int b1 = 0;
 int b2 = 0;
 int r1 = 0;
@@ -77,7 +77,7 @@ void loop() {
 //  delay(1000);
 
   // Color result 1  
-  if(g1<=70 & g1>=35 & r1>=55 & b1<=145 & b1>30){
+  if(g1>=70 & g1<=100 & r1>=70 & r1<=120 & b1>=60){
     Serial.println("Green 1");
     result1=1;
   } else {
@@ -92,7 +92,7 @@ void loop() {
 //  Serial.print("G2= ");
 //  Serial.print(g2);
 //  Serial.print("  ");
-    
+//    
   // Blue 2
   digitalWrite(S2,LOW);
   digitalWrite(S3,HIGH);
@@ -101,12 +101,12 @@ void loop() {
 //  Serial.print("B2= ");
 //  Serial.print(b2);
 //  Serial.print("  ");
-     
+//     
   // Red 2
   digitalWrite(S2,LOW);
   digitalWrite(S3,LOW);
   r2 = pulseIn(sensor2Out, LOW);
-  
+//  
 //  Serial.print("R2= ");
 //  Serial.print(r2); 
 //   Serial.print("  "); 
@@ -114,7 +114,7 @@ void loop() {
 //   delay(1000);   
 
   // Color result 2
-  if(g2<=70 & g2>=35 & r2>=55 & b2<=145 & b2>30){
+  if(g2>=70 & g2<=100 & r2>=70 & r2<=120 & b2>=60){
     Serial.println("Green 2");
     result2=1;
   } else {
