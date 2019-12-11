@@ -3,33 +3,20 @@
 #define ADDR_1 0x10 // (Me)
 #define ADDR_2 0x20
 
-char greenBool_L = 'N'; // Received over I2C
-char greenBool_R = 'N'; // Received over I2C
+int greenBool_L = 0; // Received over I2C
+int greenBool_R = 0; // Received over I2C
 
 enum { // Commands to Sensors
   COLOUR_L = 1,
   COLOUR_R  = 2
 };
 
-ZumoBuzzer buzzer;
-ZumoReflectanceSensorArray reflectanceSensors;
-ZumoMotors motors;
-Pushbutton button(ZUMO_BUTTON);
-int lastError = 0;
-
-const int MAX_SPEED = 200; // Maximum Speed
-
-void readSensor(const byte command, const int responseSize) {
-  Wire.beginTransmission(ADDR_2);
-  Wire.write(command);
-  int status = Wire.endTransmission();
-  if (status != 0) {
-    digitalWrite(13, HIGH);
-  } else {
-    digitalWrite(13, LOW);
-  }
-  Wire.requestFrom(ADDR_2, responseSize); 
-}
+ZumoBuzzer buzzer; // Not Used
+ZumoReflectanceSensorArray reflectanceSensors; // Reflectance Sensor
+ZumoMotors motors; // Motor Controls
+Pushbutton button(ZUMO_BUTTON); // Calibration Button
+int lastError = 0; // PID Variable
+const int MAX_SPEED = 140; // Maximum Speed
 
 void setup() {
   /* Serial */
@@ -62,7 +49,7 @@ void setup() {
 }
 
 void loop() {
-  /* Zumo Shield */
+  /* Line Follower */
   unsigned int sensors[6];
   int position = reflectanceSensors.readLine(sensors);
   int error = position - 2500;
@@ -79,19 +66,81 @@ void loop() {
   if (m2Speed > MAX_SPEED)
     m2Speed = MAX_SPEED;
   motors.setSpeeds(m1Speed, m2Speed);
-
-  /* Colour Sensor (Left) */
-
-  /* Colour Sensor (Right) */
-  readSensor(COLOUR_R, 1);
-  if (Wire.available() != 0) {
-    greenBool_R = Wire.read(); 
-    if (greenBool_R == 'R') {
-      delay(50); // Initial Wait
-      m1Speed = 300; // Fixed Speed
-      m2Speed = 0;
-      motors.setSpeeds(m1Speed, m2Speed);
-      delay(450); // Turn Time
+  
+  /* Read Colour Sensors */
+  greenBool_L = readSensor(COLOUR_L, 1);
+  greenBool_R = readSensor(COLOUR_R, 1);
+  
+  /* Left Turn */
+  if (greenBool_L == 1 && greenBool_R == 0) { // Left Turn
+    motors.setSpeeds(0, 0);
+    int check_R = 0;
+    for (int i = 0; i < 20; i++) {
+      check_R = readSensor(COLOUR_R, 1);
+      if (check_R == 1) {
+        break;
+      }
+    }
+    if (check_R == 0) {
+      Serial.println("I need to left turn.");
+      delay(100);
+      motors.setSpeeds(5, 140);
+      delay(2600);
+    } else {
+      Serial.println("I need to turn around.");
+      reverseMove();
     }
   }
+  
+  /* Right Turn */
+  if (greenBool_L == 0 && greenBool_R == 1) {
+    motors.setSpeeds(0, 0);
+    int check_L = 0;
+    for (int i = 0; i < 20; i++) {
+      check_L = readSensor(COLOUR_L, 1);
+      if (check_L == 1) {
+        break;
+      }
+    }
+    if (check_L == 0) {
+      Serial.println("I need to right turn.");
+      delay(100);
+      motors.setSpeeds(140, 5);
+      delay(2600);
+    } else {
+      Serial.println("I need to turn around.");
+      reverseMove();
+    }
+  }
+
+  /* Turn Around */
+  if (greenBool_L == 1 && greenBool_R == 1) {
+    Serial.println("I need to turn around.");
+    reverseMove();
+  }
+}
+
+void reverseMove() { // MAX_SPEED = 140
+  motors.setSpeeds(-140, 0);
+  delay(3100);
+  motors.setSpeeds(0, 140);
+  delay(2550);
+}
+
+int readSensor(const byte command, const int responseSize) {
+  int value = 0;
+  Wire.beginTransmission(ADDR_2);
+  Wire.write(command);
+  int status = Wire.endTransmission();
+  if (status != 0) {
+    digitalWrite(13, HIGH);
+    while(1); // Pause Arduino
+  } else {
+    digitalWrite(13, LOW);
+  }
+  Wire.requestFrom(ADDR_2, responseSize); 
+  if (Wire.available() != 0) {
+    value = Wire.read(); 
+  }
+  return value;
 }
