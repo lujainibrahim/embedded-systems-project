@@ -22,6 +22,10 @@ int r2 = 0;
 int g1 = 0;
 int g2 = 0;
 
+// Serial Plotter
+int LeftDetected = 0;
+int RightDetected = 0;
+int loopCount = 0;
 
 char command;
 int result1=0;
@@ -46,7 +50,21 @@ void setup() {
 }
 
 void loop() { 
+  /* plotting left and right green square */
+//  loopCount++;
+//  if (loopCount == 20) {
+//    loopCount = 0;
+//  Serial.print("LeftDetected:");
+//  Serial.print(LeftDetected);
+//  Serial.print(", ");
+//  Serial.print("RightDetected:");
+//  Serial.println(RightDetected);
+//  LeftDetected = 0;
+//  RightDetected = 0;
+//  }
 
+
+  
   // Green 1
   digitalWrite(S2,HIGH);
   digitalWrite(S3,HIGH);
@@ -55,7 +73,7 @@ void loop() {
 //  Serial.print("G1= ");
 //  Serial.print(g1); 
 //  Serial.print("  "); 
-  
+//  
   // Blue 1
   digitalWrite(S2,LOW);
   digitalWrite(S3,HIGH);
@@ -74,11 +92,12 @@ void loop() {
 //  Serial.print(r1);
 //  Serial.print("  "); 
 //  Serial.println("  ");
-//  delay(1000);
+//  delay(500);
 
   // Color result 1  
-  if(g1>=70 & g1<=100 & r1>=70 & r1<=120 & b1>=60){
+  if(g1>=70 & g1<=100 & r1>=70 & r1<=120 & b1>=70){
     Serial.println("Green 1");
+    LeftDetected++;
     result1=1;
   } else {
     result1=0;
@@ -111,11 +130,12 @@ void loop() {
 //  Serial.print(r2); 
 //   Serial.print("  "); 
 //   Serial.println("  ");
-//   delay(1000);   
+//   delay(500);   
 
   // Color result 2
-  if(g2>=70 & g2<=100 & r2>=70 & r2<=120 & b2>=60){
+  if(g2>=70 & g2<=100 & r2>=70 & r2<=120 & b2>=70){
     Serial.println("Green 2");
+    RightDetected++;
     result2=1;
   } else {
     result2=0;
