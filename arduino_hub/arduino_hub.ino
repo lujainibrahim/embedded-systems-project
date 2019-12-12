@@ -1,4 +1,4 @@
-/* DEFINITIONS */
+/* D E F I N I T I O N S */
 
 #include <Wire.h> // I2C Library
 #include <ZumoShield.h> // Zumo Shield Library
@@ -9,8 +9,8 @@ int greenBool_L = 0; // Received over I2C
 int greenBool_R = 0; // Received over I2C
 
 enum { // Commands to Sensors
-  COLOUR_L = 1,
-  COLOUR_R  = 2
+  COLOR_L = 1,
+  COLOR_R  = 2
 };
 
 ZumoBuzzer buzzer; // Not Used
@@ -20,7 +20,7 @@ Pushbutton button(ZUMO_BUTTON); // Calibration Button
 int lastError = 0; // PID Variable
 const int MAX_SPEED = 140; // Maximum Speed
 
-/* SETUP */
+/* S E T U P */
 
 void setup() {
   /* Serial */
@@ -52,7 +52,7 @@ void setup() {
   while(buzzer.isPlaying()); // Necessary
 }
 
-/* MAIN LOOP */
+/* M A I N  L O O P */
 
 void loop() {
   /* Line Follower */
@@ -77,17 +77,17 @@ void loop() {
     m2Speed = MAX_SPEED;
   motors.setSpeeds(m1Speed, m2Speed);
   
-  /* Read Colour Sensors */
-  greenBool_L = readSensor(COLOUR_L, 1);
-  greenBool_R = readSensor(COLOUR_R, 1);
+  /* Read Color Sensors */
+  greenBool_L = readSensor(COLOR_L, 1);
+  greenBool_R = readSensor(COLOR_R, 1);
   if (greenBool_L == 1 || greenBool_R == 1) {
     stopMove();
-    delay(50);
-    motors.setSpeeds(140, 140);
+    delay(150);
+    motors.setSpeeds(-140, -140);
     delay(50);
     stopMove();
-    greenBool_L = readSensor(COLOUR_L, 1);
-    greenBool_R = readSensor(COLOUR_R, 1);
+    greenBool_L = readSensor(COLOR_L, 1);
+    greenBool_R = readSensor(COLOR_R, 1);
   }
   
   /* Left Turn */
@@ -95,7 +95,7 @@ void loop() {
     stopMove();
     int check_R = 0;
     for (int i = 0; i < 25; i++) {
-      check_R = readSensor(COLOUR_R, 1);
+      check_R = readSensor(COLOR_R, 1);
       if (check_R == 1) {
         break;
       }
@@ -114,7 +114,7 @@ void loop() {
     stopMove();
     int check_L = 0;
     for (int i = 0; i < 25; i++) {
-      check_L = readSensor(COLOUR_L, 1);
+      check_L = readSensor(COLOR_L, 1);
       if (check_L == 1) {
         break;
       }
@@ -135,7 +135,7 @@ void loop() {
   }  
 }
 
-/* FUNCTIONS */
+/* F U N C T I O N S */
 
 void turnMove(int signal, int turnValue) { // ~90° Movement
   int m1Speed, m2Speed;
