@@ -18,7 +18,8 @@ ZumoReflectanceSensorArray reflectanceSensors; // Reflectance Sensor
 ZumoMotors motors; // Motor Controls
 Pushbutton button(ZUMO_BUTTON); // Calibration Button
 int lastError = 0; // PID Variable
-const int MAX_SPEED = 160; // Maximum Speed
+const int BASE_SPEED = 180;
+const int MAX_SPEED = 400;
 int colorRead = 0;
 
 /* S E T U P */
@@ -62,8 +63,8 @@ void loop() {
   int error = position - 2500;
   int speedDifference = error / 4 + 6 * (error - lastError);
   lastError = error;
-  int m1Speed = MAX_SPEED + speedDifference;
-  int m2Speed = MAX_SPEED - speedDifference;
+  int m1Speed = BASE_SPEED + speedDifference;
+  int m2Speed = BASE_SPEED - speedDifference;
   if (m1Speed < 0)
     m1Speed = 0;
   if (m2Speed < 0)
