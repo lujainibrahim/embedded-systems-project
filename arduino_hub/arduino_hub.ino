@@ -59,10 +59,6 @@ void loop() {
   unsigned int sensors[6];
   int position = reflectanceSensors.readLine(sensors);
   int error = position - 2500;
-  
-  // PLACEHOLDER
-  // If it detects white, just go straight until it is detected.
-  
   int speedDifference = error / 4 + 6 * (error - lastError);
   lastError = error;
   int m1Speed = MAX_SPEED + speedDifference;
@@ -80,58 +76,26 @@ void loop() {
   /* Read Color Sensors */
   greenBool_L = readSensor(COLOR_L, 1);
   greenBool_R = readSensor(COLOR_R, 1);
-  if (greenBool_L == 1 || greenBool_R == 1) {
-    stopMove();
-    delay(150);
-    motors.setSpeeds(-140, -140);
-    delay(50);
-    stopMove();
-    greenBool_L = readSensor(COLOR_L, 1);
-    greenBool_R = readSensor(COLOR_R, 1);
-  }
   
   /* Left Turn */
   if (greenBool_L == 1 && greenBool_R == 0) {
+    // To Be Calibrated
     stopMove();
-    int check_R = 0;
-    for (int i = 0; i < 25; i++) {
-      check_R = readSensor(COLOR_R, 1);
-      if (check_R == 1) {
-        break;
-      }
-    }
-    if (check_R == 0) {
-      Serial.println("I need to left turn.");
-      turnMove(0, 260);
-    } else if (check_R == 1) {
-      Serial.println("I need to turn around.");
-      reverseMove(170);
-    }
+    while(1);
   }
   
   /* Right Turn */
   if (greenBool_L == 0 && greenBool_R == 1) {
+    // To Be Calibrated
     stopMove();
-    int check_L = 0;
-    for (int i = 0; i < 25; i++) {
-      check_L = readSensor(COLOR_L, 1);
-      if (check_L == 1) {
-        break;
-      }
-    }
-    if (check_L == 0) {
-      Serial.println("I need to right turn.");
-      turnMove(1, 260);
-    } else if (check_L == 1) {
-      Serial.println("I need to turn around.");
-      reverseMove(170);
-    }
+    while(1);
   }
 
   /* Turn Around */
   if (greenBool_L == 1 && greenBool_R == 1) {
-    Serial.println("I need to turn around.");
-    reverseMove(170);
+    // To Be Calibrated
+    stopMove();
+    while(1);
   }  
 }
 

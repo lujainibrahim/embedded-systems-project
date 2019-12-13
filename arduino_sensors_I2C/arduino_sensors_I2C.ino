@@ -18,8 +18,8 @@ enum { // Commands from Hub
 Adafruit_TCS34725 tcs_L = Adafruit_TCS34725(); // Colour Sensor (Left)
 Adafruit_TCS34725 tcs_R = Adafruit_TCS34725(); // Colour Sensor (Right)
 char command;
-char greenBool_L = 0; // Left Sensor
-char greenBool_R = 0; // Right Sensor
+int greenBool_L = 0; // Left Sensor
+int greenBool_R = 0; // Right Sensor
 
 /* S E T U P */
 
