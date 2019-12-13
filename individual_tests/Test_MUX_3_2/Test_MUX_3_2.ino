@@ -60,7 +60,7 @@ void loop() {
 //    Serial.println("Green (L)!");
     greenBool_L = 1;
   } else {
-    Serial.println("Not Green (L)!");
+//    Serial.println("Not Green (L)!");
     greenBool_L = 0;
   }
   /* Color Sensor (Right) */
@@ -76,7 +76,7 @@ void loop() {
 //    Serial.println("Green (R)!");
     greenBool_R = 1;
   } else {
-    Serial.println("Not Green (R)!");
+//    Serial.println("Not Green (R)!");
     greenBool_R = 0;
   }
   if (greenBool_L == 1 && greenBool_R == 1) {

@@ -18,7 +18,7 @@ ZumoReflectanceSensorArray reflectanceSensors; // Reflectance Sensor
 ZumoMotors motors; // Motor Controls
 Pushbutton button(ZUMO_BUTTON); // Calibration Button
 int lastError = 0; // PID Variable
-const int MAX_SPEED = 140; // Maximum Speed
+const int MAX_SPEED = 160; // Maximum Speed
 int colorRead = 0;
 
 /* S E T U P */
@@ -76,75 +76,56 @@ void loop() {
   /* Read Color Sensors */
   colorRead++;
   if (colorRead == 50) { // Delay for I2C
-    digitalWrite(13, HIGH);
     greenBool_L = readSensor(COLOR_L, 1);
     greenBool_R = readSensor(COLOR_R, 1);
     /* Left Turn */
     if (greenBool_L == 1 && greenBool_R == 0) {
-      stopMove();
-      int check_R = 0;
-      for (int i = 1; i < 11; i++) {
-        if (i % 2 == 0) {
-          check_R = readSensor(COLOR_R, 1);
-          if (check_R == 1) {
-            break;
-          }
-        }
-      }
-      if (check_R == 0) {
-        turnMove(0, 280);
-      } else if (check_R == 1) {
-        reverseMove(240);
+      int check = colorConfirm(COLOR_R);
+      if (check == 0) {
+        turnSide('L', 0, 850, 330);
+      } else if (check == 1) {
+        turnAround(1250, 1000, 250);
       }
     }
-    
     /* Right Turn */
     if (greenBool_L == 0 && greenBool_R == 1) {
-      stopMove();
-      int check_L = 0;
-      for (int i = 1; i < 11; i++) {
-        if (i % 2 == 0) {
-          check_L = readSensor(COLOR_L, 1);
-          if (check_L == 1) {
-            break;
-          }
-        }
+      int check = colorConfirm(COLOR_L);
+      if (check == 0) {
+        turnSide('R', 0, 850, 330);
+      } else if (check == 1) {
+        turnAround(1250, 1000, 250);
       }
-      if (check_L == 0) {
-        turnMove(1, 280);
-      } else if (check_L == 1) {
-        reverseMove(240);
-      }
-    }
-  
+    }  
     /* Turn Around */
     if (greenBool_L == 1 && greenBool_R == 1) {
-      reverseMove(240);
+      turnAround(1250, 1000, 250);
     }
+    /* Reset Counter */
     colorRead = 0;
   }
 }
 
 /* F U N C T I O N S */
 
-void turnMove(int signal, int turnValue) { // ~90° Movement
+void turnSide(char signal, int t1, int t2, int turnValue) { // ~90° Movement
   int m1Speed, m2Speed;
-  if (signal == 0) {
+  if (signal == 'L') {
     m1Speed = 0;
     m2Speed = turnValue;
-  } else if (signal == 1) {
+  } else if (signal == 'R') {
     m1Speed = turnValue;
     m2Speed = 0;
   }
+  delay(t1);
   motors.setSpeeds(m1Speed, m2Speed);
-  delay(800);
+  delay(t2);
 }
 
-void reverseMove(int turnValue) { // ~180° Movement
+void turnAround(int t1, int t2, int turnValue) { // ~180° Movement
   motors.setSpeeds(-turnValue, 0);
-  delay(1250);
+  delay(t1);
   motors.setSpeeds(0, turnValue);
-  delay(1000);
+  delay(t2);
 }
 
 void stopMove() { // Stop Motors
@@ -161,4 +142,18 @@ int readSensor(const byte command, const int responseSize) { // Read from I2C
     value = Wire.read(); 
   }
   return value;
+}
+
+int colorConfirm(const byte command) {
+  stopMove();
+  int check = 0;
+  for (int i = 1; i < 11; i++) {
+    if (i % 2 == 0) { // Delay for I2C
+      check = readSensor(command, 1);
+      if (check == 1) {
+        break;
+      }
+    }
+  }
+  return check;
 }
