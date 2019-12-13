@@ -48,7 +48,7 @@ void setup() {
 
 void loop() {
   /* Color Sensor (Left) */
-  tcaselect(2);
+  tcaselect(1);
   uint16_t r_L, g_L, b_L, c_L;
   float average_L, red_L, green_L, blue_L;
   tcs_R.getRawData(&r_L, &g_L, &b_L, &c_L);
@@ -64,7 +64,7 @@ void loop() {
     greenBool_L = 0;
   }
   /* Color Sensor (Right) */
-  tcaselect(1);
+  tcaselect(2);
   uint16_t r_R, g_R, b_R, c_R;
   float average_R, red_R, green_R, blue_R;
   tcs_R.getRawData(&r_R, &g_R, &b_R, &c_R);
