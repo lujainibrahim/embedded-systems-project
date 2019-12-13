@@ -136,7 +136,7 @@ int readSensor(const byte command, const int responseSize) { // Read from I2C
   } else {
     digitalWrite(13, LOW);
   }
-  Wire.requestFrom(ADDR_2, responseSize); 
+  Wire.requestFrom(ADDR_2, responseSize, 1); 
   if (Wire.available() != 0) {
     value = Wire.read(); 
   }
