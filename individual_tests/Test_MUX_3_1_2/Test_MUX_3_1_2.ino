@@ -82,7 +82,7 @@ void loop() {
     if (greenBool_L == 1 && greenBool_R == 0) {
       int check = colorConfirm(COLOR_R);
       if (check == 0) {
-        turnSide('L', 0, 850, 330);
+        turnSide('L', 0, 800, 330);
       } else if (check == 1) {
         turnAround(1250, 1000, 250);
       }
@@ -91,7 +91,7 @@ void loop() {
     if (greenBool_L == 0 && greenBool_R == 1) {
       int check = colorConfirm(COLOR_L);
       if (check == 0) {
-        turnSide('R', 0, 850, 330);
+        turnSide('R', 0, 800, 330);
       } else if (check == 1) {
         turnAround(1250, 1000, 250);
       }

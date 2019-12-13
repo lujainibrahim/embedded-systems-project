@@ -23,7 +23,7 @@ int greenBool_R = 0; // Right Sensor
 void setup() {
   pinMode(13, OUTPUT);
   /* Serial */
-   Serial.begin(9600);
+//   Serial.begin(9600);
   /* I2C */
   command = 0;
   Wire.begin(ADDR_2);
@@ -32,16 +32,16 @@ void setup() {
   /* Colour Sensors */
   tcaselect(1); // Left Sensor
   if (tcs_L.begin()) {
-    Serial.println("TCS34725 (Left) detected.");
+//    Serial.println("TCS34725 (Left) detected.");
   } else {
-    Serial.println("TCS34725 (Left) not detected.");
+//    Serial.println("TCS34725 (Left) not detected.");
     while(1);
   }
   tcaselect(2); // Right Sensor
   if (tcs_R.begin()) {
-    Serial.println("TCS34725 (Right) detected.");
+//    Serial.println("TCS34725 (Right) detected.");
   } else {
-    Serial.println("TCS34725 (Right) not detected.");
+//    Serial.println("TCS34725 (Right) not detected.");
     while(1);
   }
 }
@@ -72,7 +72,7 @@ void loop() {
   red_R = r_R/average_R;
   green_R = g_R/average_R;
   blue_R = b_R/average_R;
-  if ((red_R < 0.95) && (green_R >= 1.3) && (blue_R <= 0.95)) {
+  if ((red_R <= 1.05) && (green_R >= 1.3) && (blue_R <= 0.95)) {
 //    Serial.println("Green (R)!");
     greenBool_R = 1;
   } else {
