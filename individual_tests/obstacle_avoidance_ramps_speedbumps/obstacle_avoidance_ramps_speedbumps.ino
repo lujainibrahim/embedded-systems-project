@@ -150,7 +150,7 @@ void loop()
   // constant of 6, which should work decently for many Zumo motor choices.
   // You probably want to use trial and error to tune these constants for
   // your particular Zumo and line course.
-  int speedDifference = error / 4 + 6 * (error - lastError);
+  int speedDifference = error * 6 + 6 * (error - lastError);
 
   lastError = error;
 

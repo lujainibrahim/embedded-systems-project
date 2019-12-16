@@ -21,7 +21,7 @@ ZumoReflectanceSensorArray reflectanceSensors; // Reflectance Sensor
 ZumoMotors motors; // Motor Controls
 Pushbutton button(ZUMO_BUTTON); // Calibration Button
 int lastError = 0; // PID Variable
-int MAX_SPEED = 160;
+int MAX_SPEED = 200;
 
 /* Accelerometer */
 LSM303 compass;
@@ -41,9 +41,18 @@ int prevError = 0;
 int error = 0;
 int stationaryCheck = 0;
 
+/* PID Control */
+int currentTime = 1;
+int elapsedTime = 1;
+int previousTime = 1;
+int cumError = 0;
+
 /* S E T U P */
 
 void setup() {
+  /* Ultrasonic Sensor */
+  pinMode(echoPin, INPUT);
+  pinMode(trigPin, OUTPUT);
   /* LED */
   pinMode(6, OUTPUT);
   /* Serial */
@@ -53,15 +62,11 @@ void setup() {
   /* Accelerometer */
   compass.init();
   compass.enableDefault();
-  /* Ultrasonic Sensor */
-  pinMode(echoPin, INPUT);
-  pinMode(trigPin, OUTPUT);
   /* Zumo Shield */
   buzzer.play(">g32>>c32"); // Necessary
   reflectanceSensors.init();
   button.waitForButton();
-  pinMode(13, OUTPUT); // LED
-  digitalWrite(13, HIGH); 
+  digitalWrite(6, HIGH); 
   delay(1000);
   int i;
   for(i = 0; i < 80; i++) {
@@ -73,7 +78,7 @@ void setup() {
     delay(20);
   }
   motors.setSpeeds(0,0);
-  digitalWrite(13, LOW);
+  digitalWrite(6, LOW);
   buzzer.play(">g32>>c32"); // Necessary
   Serial.println("Calibration complete.");
   button.waitForButton();
@@ -89,22 +94,34 @@ void loop() {
   stationaryCheck++;
   if (loopTime == 100) { 
     /* Incline and Accelerometer */
-    compass.read();
-    changeSpeedBasedOnIncline();
+//    compass.read();
+//    changeSpeedBasedOnIncline();
     /* Ultrasonic Sensor */
 //    ultrasonicSensor();
     loopTime = 0;
   }
   
   /* Line Follower */
+  int Kp = 8;
+  int Kd = 4;
+  int Ki = 1;
+
+  if (loopTime % 2 == 0) {
+    cumError = 0;
+  }
+  
   unsigned int sensors[6];
   int position = reflectanceSensors.readLine(sensors);
   prevError = error;
   error = position - 2500;
   change = abs(error) - abs(prevError);
   totalChange += change;
-  int speedDifference = error * 8 + 6 * (error - lastError);
+
+  cumError += error;
+  
+  int speedDifference = Kp * error + Kd * (error - lastError) + Ki * cumError;
   lastError = error;
+  
   int m1Speed = MAX_SPEED + speedDifference;
   int m2Speed = MAX_SPEED - speedDifference;
   if (m1Speed < 0)
@@ -118,11 +135,12 @@ void loop() {
   
   /* Ramp and Speed Bump Stuck Check */
   if (stationaryCheck == 800) { // Check every 800 loops
-    rampCheck();
-    speedBumpCheck();
+//    rampCheck();
+//    speedBumpCheck();
     stationaryCheck = 0;
     totalChange = 0;
   }
+  
   motors.setSpeeds(m1Speed, m2Speed);
   
   /* Color Sensors Check */
@@ -295,8 +313,11 @@ void ultrasonicSensor() {
 //    pinMode(echoPin, INPUT);
     duration = pulseIn(echoPin, HIGH);
     cm = microsecondsToCentimeters(duration);
-    if (cm < 18) {
-//      digitalWrite(6, HIGH);
+    if (cm > 100) { // test line
+      cm = 100;
+    }
+    if (cm < 7) {
+      digitalWrite(6, HIGH);
       Stop();
       delay(100);
       moveRight();
@@ -311,10 +332,10 @@ void ultrasonicSensor() {
       delay(500);
       moveForward();
       delay(100);
+      digitalWrite(6, LOW);
     } else {
-      moveForward();
+      digitalWrite(6, LOW);
     }
-//    digitalWrite(6, LOW);
 }
 
 /* Motor */
