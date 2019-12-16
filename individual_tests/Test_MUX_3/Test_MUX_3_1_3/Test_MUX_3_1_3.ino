@@ -27,7 +27,7 @@ ZumoMotors motors; // Motor Controls
 Pushbutton button(ZUMO_BUTTON); // Calibration Button
 int lastError = 0; // PID Variable
 int MAX_SPEED = 150;
-int MIN_SPEED = -80;
+int MIN_SPEED = -100;
 
 /* Accelerometer */
 LSM303 compass;
