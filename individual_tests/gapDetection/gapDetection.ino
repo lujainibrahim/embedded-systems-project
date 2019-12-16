@@ -25,7 +25,7 @@ int lastError = 0;
 // (400 lets the motors go at top speed; decrease to impose a speed limit)
 const int MAX_SPEED = 150;
 int gapCounter = 0;
-int maxGap = 400;
+int maxGap = 800; // subject to change
 
 /* Gap */
 unsigned long previousMillis;
