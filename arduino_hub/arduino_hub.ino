@@ -119,7 +119,8 @@ void loop() {
   int position = reflectanceSensors.readLine(sensors);
   error = position - 2500;
   cumError += error; 
-  int speedDifference = Kp*error + Kd*(error - lastError) + Ki*cumError;
+  int speedDifference = error / 4 + 6 * (error - lastError);
+//  int speedDifference = Kp*error + Kd*(error - lastError) + Ki*cumError;
   lastError = error;
   int m1Speed = MAX_SPEED + speedDifference;
   int m2Speed = MAX_SPEED - speedDifference;
@@ -144,12 +145,12 @@ void loop() {
       if (check == 0) {
         // P L A C E H O L D E R
         motors.setSpeeds(125, 125);
-        delay(500);
-        turnAngle(-90);
+        delay(450);
+        turnAngle(-89);
       } else if (check == 1) {
         // P L A C E H O L D E R
         motors.setSpeeds(-125, -125);
-        delay(500);
+        delay(450);
         turnAngle(179);
       }
     }
@@ -159,12 +160,12 @@ void loop() {
       if (check == 0) {
         // P L A C E H O L D E R
         motors.setSpeeds(125, 125);
-        delay(500);
-        turnAngle(90);
+        delay(450);
+        turnAngle(89);
       } else if (check == 1) {
         // P L A C E H O L D E R
         motors.setSpeeds(-125, -125);
-        delay(500);
+        delay(450);
         turnAngle(179);
       }
     }  
@@ -172,7 +173,7 @@ void loop() {
     if (value_L == 1 && value_R == 1) {
       // P L A C E H O L D E R
       motors.setSpeeds(-125, -125);
-      delay(500);
+      delay(450);
       turnAngle(179);
     }
     /* Reset Counter */

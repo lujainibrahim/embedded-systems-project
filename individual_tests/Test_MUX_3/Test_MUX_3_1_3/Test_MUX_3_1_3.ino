@@ -27,7 +27,7 @@ ZumoMotors motors; // Motor Controls
 Pushbutton button(ZUMO_BUTTON); // Calibration Button
 int lastError = 0; // PID Variable
 int MAX_SPEED = 150;
-int MIN_SPEED = -100;
+int MIN_SPEED = -120;
 
 /* Accelerometer */
 LSM303 compass;
@@ -74,27 +74,27 @@ void setup() {
     /* I2C */
   Wire.begin(ADDR_1);
   /* Accelerometer */
-  LSM303::vector<int16_t> running_min = {32767, 32767, 32767}, running_max = {-32767, -32767, -32767};
-  unsigned char index;
-  compass.init();
-  compass.enableDefault();
-  compass.writeReg(LSM303::CRB_REG_M, CRB_REG_M_2_5GAUSS); // +/- 2.5 gauss sensitivity to hopefully avoid overflow problems
-  compass.writeReg(LSM303::CRA_REG_M, CRA_REG_M_220HZ);    // 220 Hz compass update rate
-  button.waitForButton();
-  motors.setSpeeds(200, -200);
-  for(index = 0; index < CALIBRATION_SAMPLES; index ++) {
-    compass.read();
-    running_min.x = min(running_min.x, compass.m.x);
-    running_min.y = min(running_min.y, compass.m.y);
-    running_max.x = max(running_max.x, compass.m.x);
-    running_max.y = max(running_max.y, compass.m.y);
-    delay(50);
-  }
-  motors.setSpeeds(0, 0);
-  compass.m_max.x = running_max.x;
-  compass.m_max.y = running_max.y;
-  compass.m_min.x = running_min.x;
-  compass.m_min.y = running_min.y;
+//  LSM303::vector<int16_t> running_min = {32767, 32767, 32767}, running_max = {-32767, -32767, -32767};
+//  unsigned char index;
+//  compass.init();
+//  compass.enableDefault();
+//  compass.writeReg(LSM303::CRB_REG_M, CRB_REG_M_2_5GAUSS); // +/- 2.5 gauss sensitivity to hopefully avoid overflow problems
+//  compass.writeReg(LSM303::CRA_REG_M, CRA_REG_M_220HZ);    // 220 Hz compass update rate
+//  button.waitForButton();
+//  motors.setSpeeds(200, -200);
+//  for(index = 0; index < CALIBRATION_SAMPLES; index ++) {
+//    compass.read();
+//    running_min.x = min(running_min.x, compass.m.x);
+//    running_min.y = min(running_min.y, compass.m.y);
+//    running_max.x = max(running_max.x, compass.m.x);
+//    running_max.y = max(running_max.y, compass.m.y);
+//    delay(50);
+//  }
+//  motors.setSpeeds(0, 0);
+//  compass.m_max.x = running_max.x;
+//  compass.m_max.y = running_max.y;
+//  compass.m_min.x = running_min.x;
+//  compass.m_min.y = running_min.y;
   /* Zumo Shield */
   buzzer.play(">g32>>c32"); // Necessary
   reflectanceSensors.init();
@@ -130,7 +130,7 @@ void loop() {
 //    compass.read();
 //    changeSpeedBasedOnIncline();
     /* Ultrasonic Sensor */
-    ultrasonicSensor();
+//    ultrasonicSensor();
     loopTime = 0;
   }
   
@@ -176,28 +176,41 @@ void loop() {
     if (greenBool_L == 1 && greenBool_R == 0) {
       int check = colorConfirm(COLOR_R);
       if (check == 0) {
-//        turnAngle(-90); // still need to add a little delay before...
-        turnSide('L', 0, 800, 330);
+        motors.setSpeeds(150, 150);
+        delay(400);
+        motors.setSpeeds(-180, 180);
+        delay(530);
+//        turnSide('L', 0, 800, 330);
       } else if (check == 1) {
-//        turnAngle(180);
-        turnAround(1250, 1000, 250);
+        motors.setSpeeds(-150, -150);
+        delay(250);
+        motors.setSpeeds(180, -180);
+        delay(1300);
       }
     }
     /* Right Turn */
     if (greenBool_L == 0 && greenBool_R == 1) {
       int check = colorConfirm(COLOR_L);
       if (check == 0) {
-//        turnAngle(90);
-        turnSide('R', 0, 800, 330);
+        motors.setSpeeds(150, 150);
+        delay(400);
+        motors.setSpeeds(180, -180);
+        delay(530);
+//        turnSide('R', 0, 800, 330);
       } else if (check == 1) {
-//        turnAngle(180);
-        turnAround(1250, 1000, 250);
+        motors.setSpeeds(-150, -150);
+        delay(250);
+        motors.setSpeeds(180, -180);
+        delay(1300);
+//        turnAround(1250, 1000, 180);
       }
     }  
     /* Turn Around */
     if (greenBool_L == 1 && greenBool_R == 1) {
-//      turnAngle(180);
-      turnAround(1250, 1000, 250);
+      motors.setSpeeds(-150, -150);
+        delay(250);
+        motors.setSpeeds(180, -180);
+        delay(1300);
     }
     /* Reset Counter */
     colorRead = 0;
@@ -427,7 +440,8 @@ void turnAngle(int angle) {
         target_heading = fmod(averageHeading() + angle, 360);
         check = 1;
       } else {
-        motors.setSpeeds(0, 0);
+        motors.setSpeeds(125, 125);
+        delay(250);
         break;
       }
     } else {
