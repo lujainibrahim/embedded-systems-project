@@ -26,8 +26,8 @@ ZumoReflectanceSensorArray reflectanceSensors; // Reflectance Sensor
 ZumoMotors motors; // Motor Controls
 Pushbutton button(ZUMO_BUTTON); // Calibration Button
 int lastError = 0; // PID Variable
-int MAX_SPEED = 170;
-const int MIN_SPEED = -100;
+int MAX_SPEED = 150;
+int MIN_SPEED = -80;
 
 /* Accelerometer */
 LSM303 compass;
@@ -60,7 +60,7 @@ int errorGap;
 int position;
 unsigned int sensors[6]; //make global for others too
 int gapCounter = 0;
-int maxGap = 600; // subject to change
+int maxGap = 1000; // subject to change
 
 /* S E T U P */
 void setup() {
