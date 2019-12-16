@@ -30,14 +30,14 @@ void setup() {
   Wire.onReceive(receiveEvent);
   Wire.onRequest(requestEvent);
   /* Colour Sensors */
-  tcaselect(1); // Left Sensor
+  tcaselect(2); // Left Sensor
   if (tcs_L.begin()) {
 //    Serial.println("TCS34725 (Left) detected.");
   } else {
 //    Serial.println("TCS34725 (Left) not detected.");
     while(1);
   }
-  tcaselect(2); // Right Sensor
+  tcaselect(1); // Right Sensor
   if (tcs_R.begin()) {
 //    Serial.println("TCS34725 (Right) detected.");
   } else {
@@ -48,10 +48,10 @@ void setup() {
 
 void loop() {
   /* Color Sensor (Left) */
-  tcaselect(1);
+  tcaselect(2);
   uint16_t r_L, g_L, b_L, c_L;
   float average_L, red_L, green_L, blue_L;
-  tcs_R.getRawData(&r_L, &g_L, &b_L, &c_L);
+  tcs_L.getRawData(&r_L, &g_L, &b_L, &c_L);
   average_L = (r_L+g_L+b_L)/3;
   red_L = r_L/average_L;
   green_L = g_L/average_L;
@@ -64,7 +64,7 @@ void loop() {
     greenBool_L = 0;
   }
   /* Color Sensor (Right) */
-  tcaselect(2);
+  tcaselect(1);
   uint16_t r_R, g_R, b_R, c_R;
   float average_R, red_R, green_R, blue_R;
   tcs_R.getRawData(&r_R, &g_R, &b_R, &c_R);

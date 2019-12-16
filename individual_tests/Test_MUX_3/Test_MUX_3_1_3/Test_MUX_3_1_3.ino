@@ -26,7 +26,8 @@ ZumoReflectanceSensorArray reflectanceSensors; // Reflectance Sensor
 ZumoMotors motors; // Motor Controls
 Pushbutton button(ZUMO_BUTTON); // Calibration Button
 int lastError = 0; // PID Variable
-int MAX_SPEED = 160;
+int MAX_SPEED = 170;
+const int MIN_SPEED = -100;
 
 /* Accelerometer */
 LSM303 compass;
@@ -50,10 +51,18 @@ int stationaryCheck = 0;
 int currentTime = 1;
 int elapsedTime = 1;
 int previousTime = 1;
-int cumError = 0;
+
+/* Gap */
+unsigned long previousMillis;
+unsigned long currentMillis;
+unsigned long timeElapsed;
+int errorGap;
+int position;
+unsigned int sensors[6]; //make global for others too
+int gapCounter = 0;
+int maxGap = 600; // subject to change
 
 /* S E T U P */
-
 void setup() {
   /* Ultrasonic Sensor */
   pinMode(echoPin, INPUT);
@@ -121,32 +130,25 @@ void loop() {
 //    compass.read();
 //    changeSpeedBasedOnIncline();
     /* Ultrasonic Sensor */
-//    ultrasonicSensor();
+    ultrasonicSensor();
     loopTime = 0;
   }
   
   /* Line Follower */
-  int Kp = 8;
-  int Kd = 4;
-  int Ki = 1;
-  if (loopTime % 2 == 0) {
-    cumError = 0;
-  }
-  unsigned int sensors[6];
-  int position = reflectanceSensors.readLine(sensors);
+
+  position = reflectanceSensors.readLine(sensors);
   prevError = error;
   error = position - 2500;
   change = abs(error) - abs(prevError);
   totalChange += change;
-  cumError += error; 
-  int speedDifference = Kp*error + Kd*(error - lastError) + Ki*cumError;
+  int speedDifference = error / 4 + 6 * (error - lastError);
   lastError = error;  
   int m1Speed = MAX_SPEED + speedDifference;
   int m2Speed = MAX_SPEED - speedDifference;
   if (m1Speed < 0)
-    m1Speed = 0;
+    m1Speed = MIN_SPEED;
   if (m2Speed < 0)
-    m2Speed = 0;
+    m2Speed = MIN_SPEED;
   if (m1Speed > MAX_SPEED)
     m1Speed = MAX_SPEED;
   if (m2Speed > MAX_SPEED)
@@ -159,6 +161,9 @@ void loop() {
     stationaryCheck = 0;
     totalChange = 0;
   }
+
+  /* GAP LOGIC */
+  gap();
   
   motors.setSpeeds(m1Speed, m2Speed);
   
@@ -171,27 +176,28 @@ void loop() {
     if (greenBool_L == 1 && greenBool_R == 0) {
       int check = colorConfirm(COLOR_R);
       if (check == 0) {
-        turnAngle(-90); // still need to add a little delay before...
-//        turnSide('L', 0, 800, 330);
+//        turnAngle(-90); // still need to add a little delay before...
+        turnSide('L', 0, 800, 330);
       } else if (check == 1) {
-        turnAngle(180);
-//        turnAround(1250, 1000, 250);
+//        turnAngle(180);
+        turnAround(1250, 1000, 250);
       }
     }
     /* Right Turn */
     if (greenBool_L == 0 && greenBool_R == 1) {
       int check = colorConfirm(COLOR_L);
       if (check == 0) {
-        turnAngle(90);
-//        turnSide('R', 0, 800, 330);
+//        turnAngle(90);
+        turnSide('R', 0, 800, 330);
       } else if (check == 1) {
-        turnAngle(180);
-//        turnAround(1250, 1000, 250);
+//        turnAngle(180);
+        turnAround(1250, 1000, 250);
       }
     }  
     /* Turn Around */
     if (greenBool_L == 1 && greenBool_R == 1) {
-      turnAngle(180);
+//      turnAngle(180);
+      turnAround(1250, 1000, 250);
     }
     /* Reset Counter */
     colorRead = 0;
@@ -336,25 +342,24 @@ void ultrasonicSensor() {
 //    pinMode(echoPin, INPUT);
     duration = pulseIn(echoPin, HIGH);
     cm = microsecondsToCentimeters(duration);
-    if (cm > 100) { // test line
-      cm = 100;
-    }
-    if (cm < 7) {
+    Serial.print(cm);
+    if (cm < 18) {
       digitalWrite(6, HIGH);
       Stop();
-      delay(100);
-      moveRight();
-      delay(700);
-      moveForward();
-      delay(500);
-      moveLeft();
-      delay(650);
-      moveForward();
-      delay(300);
-      moveLeft();
-      delay(500);
-      moveForward();
-      delay(100);
+      delay(100000);
+//      delay(100);
+//      moveRight();
+//      delay(700);
+//      moveForward();
+//      delay(500);
+//      moveLeft();
+//      delay(650);
+//      moveForward();
+//      delay(300);
+//      moveLeft();
+//      delay(500);
+//      moveForward();
+//      delay(100);
       digitalWrite(6, LOW);
     } else {
       digitalWrite(6, LOW);
@@ -433,5 +438,55 @@ void turnAngle(int angle) {
         speed += TURN_BASE_SPEED;
       motors.setSpeeds(speed, -speed);
     }
+  }
+}
+
+void gap() {
+  if (abs(error) == 2500) {
+    if (gapCounter == 0) { // calculate first Time
+      previousMillis = millis(); // millis() returns an unsigned long.
+    }
+    gapCounter++;
+    
+    if (gapCounter > maxGap) { // detected a Gap
+      currentMillis = millis(); // grab current time
+      timeElapsed = currentMillis - previousMillis;  
+      Serial.println(timeElapsed);
+      motors.setSpeeds(0,0);
+      delay(500);
+      
+      /* Go back to edge of black line*/
+      
+      /* determine if to go left or right */
+      if (error > 0) { // turned right
+        // make it turn left backwards
+          motors.setSpeeds(-MAX_SPEED,-MIN_SPEED);
+          delay(timeElapsed);
+          motors.setSpeeds(0,0);
+      }
+      
+      else if (error < 0) { // turned left
+        // make it turn right backwards
+          motors.setSpeeds(-MIN_SPEED,-MAX_SPEED);
+        delay(timeElapsed);
+        motors.setSpeeds(0,0);      
+       }
+       
+       /* Go Forward Slightly */
+       motors.setSpeeds(100,100);      
+       delay(200);
+      
+      position = reflectanceSensors.readLine(sensors);
+      errorGap = position - 2500;
+      while (abs(errorGap)==2500){ // while on white, keep going forward
+        motors.setSpeeds(150, 150);
+        position = reflectanceSensors.readLine(sensors);
+        errorGap = position - 2500;
+      }
+      gapCounter = 0;
+    }
+  }
+  else {
+    gapCounter = 0;
   }
 }

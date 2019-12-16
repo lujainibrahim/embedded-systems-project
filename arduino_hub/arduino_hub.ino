@@ -4,15 +4,15 @@
 #include <ZumoShield.h> // Zumo Shield Library
 #define ADDR_1 0x10 // (Me)
 #define ADDR_2 0x20
-#define TURN_BASE_SPEED 100 // Base speed when turning
+#define TURN_BASE_SPEED 150 // Base speed when turning
 #define CALIBRATION_SAMPLES 70  // Number of compass readings to take when calibrating
 #define CRB_REG_M_2_5GAUSS 0x60 // CRB_REG_M value for magnetometer +/-2.5 gauss full scale
 #define CRA_REG_M_220HZ    0x1C // CRA_REG_M value for magnetometer 220 Hz update rate
 #define DEVIATION_THRESHOLD 5 // Allowed deviation relative to target angle that must be achieved
 
 /* Color Sensors */
-int greenBool_L = 0; // Received over I2C
-int greenBool_R = 0; // Received over I2C
+int value_L = 0; // Received over I2C
+int value_R = 0; // Received over I2C
 enum { // Commands to Sensors
   COLOR_L = 1,
   COLOR_R  = 2
@@ -23,7 +23,7 @@ ZumoBuzzer buzzer;
 ZumoReflectanceSensorArray reflectanceSensors;
 ZumoMotors motors;
 Pushbutton button(ZUMO_BUTTON);
-int MAX_SPEED = 160;
+int MAX_SPEED = 150;
 
 /* Accelerometer */
 LSM303 compass;
@@ -34,8 +34,8 @@ const int echoPin = 13;
 long duration, cm;
 
 /* PID Controller */
-int Kp = 8;
-int Kd = 4;
+int Kp = 1/4;
+int Kd = 6;
 int Ki = 1;
 int error = 0;
 int lastError = 0;
@@ -136,34 +136,44 @@ void loop() {
   /* Color Sensors Check */
   colorRead++;
   if (colorRead == 50) {
-    greenBool_L = readSensor(COLOR_L, 1);
-    greenBool_R = readSensor(COLOR_R, 1);
+    value_L = readSensor(COLOR_L, 1);
+    value_R = readSensor(COLOR_R, 1);
     /* Left Turn */
-    if (greenBool_L == 1 && greenBool_R == 0) {
+    if (value_L == 1 && value_R == 0) {
       int check = colorConfirm(COLOR_R);
       if (check == 0) {
         // P L A C E H O L D E R
+        motors.setSpeeds(125, 125);
+        delay(500);
         turnAngle(-90);
       } else if (check == 1) {
         // P L A C E H O L D E R
-        turnAngle(180);
+        motors.setSpeeds(-125, -125);
+        delay(500);
+        turnAngle(179);
       }
     }
     /* Right Turn */
-    if (greenBool_L == 0 && greenBool_R == 1) {
+    if (value_L == 0 && value_R == 1) {
       int check = colorConfirm(COLOR_L);
       if (check == 0) {
         // P L A C E H O L D E R
+        motors.setSpeeds(125, 125);
+        delay(500);
         turnAngle(90);
       } else if (check == 1) {
         // P L A C E H O L D E R
-        turnAngle(180);
+        motors.setSpeeds(-125, -125);
+        delay(500);
+        turnAngle(179);
       }
     }  
     /* Turn Around */
-    if (greenBool_L == 1 && greenBool_R == 1) {
+    if (value_L == 1 && value_R == 1) {
       // P L A C E H O L D E R
-      turnAngle(180);
+      motors.setSpeeds(-125, -125);
+      delay(500);
+      turnAngle(179);
     }
     /* Reset Counter */
     colorRead = 0;
