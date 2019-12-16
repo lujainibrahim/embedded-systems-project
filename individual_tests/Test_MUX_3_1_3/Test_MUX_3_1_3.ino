@@ -4,6 +4,11 @@
 #include <ZumoShield.h> // Zumo Shield Library
 #define ADDR_1 0x10 // (Me)
 #define ADDR_2 0x20
+#define TURN_BASE_SPEED 100
+#define CALIBRATION_SAMPLES 70  // Number of compass readings to take when calibrating
+#define CRB_REG_M_2_5GAUSS 0x60 // CRB_REG_M value for magnetometer +/-2.5 gauss full scale
+#define CRA_REG_M_220HZ    0x1C // CRA_REG_M value for magnetometer 220 Hz update rate
+#define DEVIATION_THRESHOLD 5
 
 int greenBool_L = 0; // Received over I2C
 int greenBool_R = 0; // Received over I2C
@@ -21,7 +26,7 @@ ZumoReflectanceSensorArray reflectanceSensors; // Reflectance Sensor
 ZumoMotors motors; // Motor Controls
 Pushbutton button(ZUMO_BUTTON); // Calibration Button
 int lastError = 0; // PID Variable
-int MAX_SPEED = 200;
+int MAX_SPEED = 160;
 
 /* Accelerometer */
 LSM303 compass;
@@ -60,8 +65,27 @@ void setup() {
     /* I2C */
   Wire.begin(ADDR_1);
   /* Accelerometer */
+  LSM303::vector<int16_t> running_min = {32767, 32767, 32767}, running_max = {-32767, -32767, -32767};
+  unsigned char index;
   compass.init();
   compass.enableDefault();
+  compass.writeReg(LSM303::CRB_REG_M, CRB_REG_M_2_5GAUSS); // +/- 2.5 gauss sensitivity to hopefully avoid overflow problems
+  compass.writeReg(LSM303::CRA_REG_M, CRA_REG_M_220HZ);    // 220 Hz compass update rate
+  button.waitForButton();
+  motors.setSpeeds(200, -200);
+  for(index = 0; index < CALIBRATION_SAMPLES; index ++) {
+    compass.read();
+    running_min.x = min(running_min.x, compass.m.x);
+    running_min.y = min(running_min.y, compass.m.y);
+    running_max.x = max(running_max.x, compass.m.x);
+    running_max.y = max(running_max.y, compass.m.y);
+    delay(50);
+  }
+  motors.setSpeeds(0, 0);
+  compass.m_max.x = running_max.x;
+  compass.m_max.y = running_max.y;
+  compass.m_min.x = running_min.x;
+  compass.m_min.y = running_min.y;
   /* Zumo Shield */
   buzzer.play(">g32>>c32"); // Necessary
   reflectanceSensors.init();
@@ -105,23 +129,18 @@ void loop() {
   int Kp = 8;
   int Kd = 4;
   int Ki = 1;
-
   if (loopTime % 2 == 0) {
     cumError = 0;
   }
-  
   unsigned int sensors[6];
   int position = reflectanceSensors.readLine(sensors);
   prevError = error;
   error = position - 2500;
   change = abs(error) - abs(prevError);
   totalChange += change;
-
-  cumError += error;
-  
-  int speedDifference = Kp * error + Kd * (error - lastError) + Ki * cumError;
-  lastError = error;
-  
+  cumError += error; 
+  int speedDifference = Kp*error + Kd*(error - lastError) + Ki*cumError;
+  lastError = error;  
   int m1Speed = MAX_SPEED + speedDifference;
   int m2Speed = MAX_SPEED - speedDifference;
   if (m1Speed < 0)
@@ -152,23 +171,27 @@ void loop() {
     if (greenBool_L == 1 && greenBool_R == 0) {
       int check = colorConfirm(COLOR_R);
       if (check == 0) {
-        turnSide('L', 0, 800, 330);
+        turnAngle(-90); // still need to add a little delay before...
+//        turnSide('L', 0, 800, 330);
       } else if (check == 1) {
-        turnAround(1250, 1000, 250);
+        turnAngle(180);
+//        turnAround(1250, 1000, 250);
       }
     }
     /* Right Turn */
     if (greenBool_L == 0 && greenBool_R == 1) {
       int check = colorConfirm(COLOR_L);
       if (check == 0) {
-        turnSide('R', 0, 800, 330);
+        turnAngle(90);
+//        turnSide('R', 0, 800, 330);
       } else if (check == 1) {
-        turnAround(1250, 1000, 250);
+        turnAngle(180);
+//        turnAround(1250, 1000, 250);
       }
     }  
     /* Turn Around */
     if (greenBool_L == 1 && greenBool_R == 1) {
-      turnAround(1250, 1000, 250);
+      turnAngle(180);
     }
     /* Reset Counter */
     colorRead = 0;
@@ -351,4 +374,64 @@ void moveRight() {
 }
 void Stop() {
   motors.setSpeeds(0,0);
+}
+
+template <typename T> float heading(LSM303::vector<T> v) {
+  float x_scaled =  2.0*(float)(v.x - compass.m_min.x) / ( compass.m_max.x - compass.m_min.x) - 1.0;
+  float y_scaled =  2.0*(float)(v.y - compass.m_min.y) / (compass.m_max.y - compass.m_min.y) - 1.0;
+
+  float angle = atan2(y_scaled, x_scaled)*180 / M_PI;
+  if (angle < 0)
+    angle += 360;
+  return angle;
+}
+
+float relativeHeading(float heading_from, float heading_to) {
+  float relative_heading = heading_to - heading_from;
+  if (relative_heading > 180)
+    relative_heading -= 360;
+  if (relative_heading < -180)
+    relative_heading += 360;
+  return relative_heading;
+}
+
+float averageHeading() {
+  LSM303::vector<int32_t> avg = {0, 0, 0};
+  for(int i = 0; i < 10; i ++) {
+    compass.read();
+    avg.x += compass.m.x;
+    avg.y += compass.m.y;
+  }
+  avg.x /= 10.0;
+  avg.y /= 10.0;
+  return heading(avg);
+}
+
+void turnAngle(int angle) {
+  int check = 0;
+  while(1) {
+    float heading, relative_heading;
+    int speed;
+    static float target_heading = averageHeading();
+    heading = averageHeading();
+    relative_heading = relativeHeading(heading, target_heading);
+    if(abs(relative_heading) < DEVIATION_THRESHOLD) {
+      if (check == 0) {
+        motors.setSpeeds(0, 0);
+        delay(100);
+        target_heading = fmod(averageHeading() + angle, 360);
+        check = 1;
+      } else {
+        motors.setSpeeds(0, 0);
+        break;
+      }
+    } else {
+      speed = MAX_SPEED*relative_heading/180;
+      if (speed < 0)
+        speed -= TURN_BASE_SPEED;
+      else
+        speed += TURN_BASE_SPEED;
+      motors.setSpeeds(speed, -speed);
+    }
+  }
 }
