@@ -10,8 +10,8 @@
 #define CRA_REG_M_220HZ    0x1C // CRA_REG_M value for magnetometer 220 Hz update rate
 #define DEVIATION_THRESHOLD 5
 
-int greenBool_L = 0; // Received over I2C
-int greenBool_R = 0; // Received over I2C
+int value_L = 0; // Received over I2C
+int value_R = 0; // Received over I2C
 
 /* Color Sensor */
 enum { // Commands to Sensors
@@ -19,6 +19,12 @@ enum { // Commands to Sensors
   COLOR_R  = 2
 };
 int colorRead = 0;
+unsigned long previousMillis_L;
+unsigned long currentMillis_L;
+unsigned long previousMillis_R;
+unsigned long currentMillis_R;
+unsigned long timeElapsed_L;
+unsigned long timeElapsed_R;
 
 /* Zumo Shield */
 ZumoBuzzer buzzer; // Not Used
@@ -65,12 +71,12 @@ int maxGap = 1000; // subject to change
 /* S E T U P */
 void setup() {
   /* Ultrasonic Sensor */
-  pinMode(echoPin, INPUT);
+  pinMode(echoPin, OUTPUT);
   pinMode(trigPin, OUTPUT);
   /* LED */
   pinMode(6, OUTPUT);
   /* Serial */
-//  Serial.begin(9600);
+  Serial.begin(9600);
     /* I2C */
   Wire.begin(ADDR_1);
   /* Accelerometer */
@@ -169,48 +175,59 @@ void loop() {
   
   /* Color Sensors Check */
   colorRead++;
-  if (colorRead == 50) { // Delay for I2C
-    greenBool_L = readSensor(COLOR_L, 1);
-    greenBool_R = readSensor(COLOR_R, 1);
+  if (colorRead == 15) { // Delay for I2C
+    value_L = readSensor(COLOR_L, 1);
+    value_R = readSensor(COLOR_R, 1);
+    if (value_L == 2) {
+      previousMillis_L = millis();
+    }
+    if (value_R == 2) {
+      previousMillis_R = millis();
+    }
     /* Left Turn */
-    if (greenBool_L == 1 && greenBool_R == 0) {
-      int check = colorConfirm(COLOR_R);
-      if (check == 0) {
-        motors.setSpeeds(150, 150);
-        delay(400);
-        motors.setSpeeds(-180, 180);
-        delay(530);
-//        turnSide('L', 0, 800, 330);
-      } else if (check == 1) {
-        motors.setSpeeds(-150, -150);
-        delay(250);
-        motors.setSpeeds(180, -180);
-        delay(1300);
+    if (value_L == 1 && value_R == 0) {
+      currentMillis_L = millis();
+      timeElapsed_L = currentMillis_L - previousMillis_L;
+      if (timeElapsed_L > 700) {
+        int check = colorConfirm(COLOR_R);
+        if (check == 0) {
+          motors.setSpeeds(150, 150);
+          delay(400);
+          motors.setSpeeds(-180, 180);
+          delay(530);
+        } else if (check == 1) {
+          motors.setSpeeds(-150, -150);
+          delay(250);
+          motors.setSpeeds(180, -180);
+          delay(1300);
+        }
       }
     }
     /* Right Turn */
-    if (greenBool_L == 0 && greenBool_R == 1) {
-      int check = colorConfirm(COLOR_L);
-      if (check == 0) {
-        motors.setSpeeds(150, 150);
-        delay(400);
-        motors.setSpeeds(180, -180);
-        delay(530);
-//        turnSide('R', 0, 800, 330);
-      } else if (check == 1) {
-        motors.setSpeeds(-150, -150);
-        delay(250);
-        motors.setSpeeds(180, -180);
-        delay(1300);
-//        turnAround(1250, 1000, 180);
+    if (value_L == 0 && value_R == 1) {
+      currentMillis_R = millis();
+      timeElapsed_R = currentMillis_R - previousMillis_R;
+      if (timeElapsed_R > 700) {
+        int check = colorConfirm(COLOR_L);
+        if (check == 0) {
+          motors.setSpeeds(150, 150);
+          delay(400);
+          motors.setSpeeds(180, -180);
+          delay(530);
+        } else if (check == 1) {
+          motors.setSpeeds(-150, -150);
+          delay(250);
+          motors.setSpeeds(180, -180);
+          delay(1300);
+        }
       }
     }  
     /* Turn Around */
-    if (greenBool_L == 1 && greenBool_R == 1) {
+    if (value_L == 1 && value_R == 1) {
       motors.setSpeeds(-150, -150);
-        delay(250);
-        motors.setSpeeds(180, -180);
-        delay(1300);
+      delay(250);
+      motors.setSpeeds(180, -180);
+      delay(1300);
     }
     /* Reset Counter */
     colorRead = 0;

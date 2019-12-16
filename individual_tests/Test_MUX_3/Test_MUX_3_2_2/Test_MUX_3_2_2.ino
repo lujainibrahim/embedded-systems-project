@@ -23,7 +23,7 @@ int value_R = 0; // Right Sensor
 void setup() {
   pinMode(13, OUTPUT);
   /* Serial */
-   Serial.begin(9600);
+//   Serial.begin(9600);
   /* I2C */
   command = 0;
   Wire.begin(ADDR_2);
@@ -32,16 +32,16 @@ void setup() {
   /* Colour Sensors */
   tcaselect(2); // Left Sensor
   if (tcs_L.begin()) {
-    Serial.println("TCS34725 (Left) detected.");
+//    Serial.println("TCS34725 (Left) detected.");
   } else {
-    Serial.println("TCS34725 (Left) not detected.");
+//    Serial.println("TCS34725 (Left) not detected.");
     while(1);
   }
   tcaselect(1); // Right Sensor
   if (tcs_R.begin()) {
-    Serial.println("TCS34725 (Right) detected.");
+//    Serial.println("TCS34725 (Right) detected.");
   } else {
-    Serial.println("TCS34725 (Right) not detected.");
+//    Serial.println("TCS34725 (Right) not detected.");
     while(1);
   }
 }
@@ -58,13 +58,13 @@ void loop() {
   blue_L = b_L/average_L;
   lux_L = tcs_L.calculateLux(r_L, g_L, b_L);
   if ((red_L <= 0.95) && (green_L >= 1.3) && (blue_L <= 1.2)) {
-    Serial.println("Green (L)!");
+//    Serial.println("Green (L)!");
     value_L = 1;
   } else if ((red_L >= 0.85) && (green_L <= 1.2) && (blue_L >= 0.95) && (lux_L <= 25)) {
-    Serial.println("Black (L)!");
+//    Serial.println("Black (L)!");
      value_L = 2;
   } else {
-    Serial.println("Nothing.");
+//    Serial.println("Nothing.");
     value_L = 0;
   }
   /* Color Sensor (Right) */
@@ -78,13 +78,13 @@ void loop() {
   blue_R = b_R/average_R;
   lux_R = tcs_R.calculateLux(r_R, g_R, b_R);
   if ((red_R <= 0.95) && (green_R >= 1.3) && (blue_R <= 1.2)) {
-    Serial.println("Green (R)!");
+//    Serial.println("Green (R)!");
     value_R = 1;
   } else if ((red_R >= 0.85) && (green_R <= 1.2) && (blue_R >= 0.95) && (lux_R <= 25)) {
-    Serial.println("Black (R)!");
+//    Serial.println("Black (R)!");
      value_R = 2;
   } else {
-    Serial.println("Nothing.");
+//    Serial.println("Nothing.");
     value_R = 0;
   }
   if (value_L == 2 && value_R == 2) {
