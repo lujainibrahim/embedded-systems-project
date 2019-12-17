@@ -1,6 +1,5 @@
-# embedded-term-project
-Embedded Systems Fall 2019 Term Project
-
+# Embedded Systems Fall 2019 Term Project
+Embedded Systems Course Term Project inspired by and based on the RoboCupJunior Rescue Line challenge.
 # Issues Summary
   - TCS34725 Colour Sensors + I2C Multiplexer (Single Address)
   - TCS230 TCS3200 Calibration
