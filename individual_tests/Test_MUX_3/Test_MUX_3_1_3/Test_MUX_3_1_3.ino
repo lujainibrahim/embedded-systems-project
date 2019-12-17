@@ -50,7 +50,7 @@ int turningSpeeds = 130; // calibrate!
 unsigned long previousMillis_obstacle = 0;
 unsigned long currentMillis_obstacle;
 unsigned long timeElapsed_obstacle;
-int lengthObject = 1200;
+int lengthObject = 1400;
 
 /*  Detect Stationary */
 int change = 0;
