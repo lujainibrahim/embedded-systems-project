@@ -644,16 +644,11 @@ void gap() {
        delay(300);
 
       if (!blackFound) { // Gap detected, go straight
-        notBlackFoundCounter++;
-        if (notBlackFoundCounter > 1){
-          maxGap = 550; // calibrate! for zigzag        
-        }
-        
         position = reflectanceSensors.readLine(sensors);
         errorGap = position - 2500;
 
         while (abs(errorGap)==2500){ // while on white, keep going forward
-          motors.setSpeeds(190, 100);
+          motors.setSpeeds(170, 170);
           position = reflectanceSensors.readLine(sensors);
           errorGap = position - 2500;
         }
