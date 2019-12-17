@@ -32,8 +32,8 @@ ZumoReflectanceSensorArray reflectanceSensors; // Reflectance Sensor
 ZumoMotors motors; // Motor Controls
 Pushbutton button(ZUMO_BUTTON); // Calibration Button
 int lastError = 0; // PID Variable
-int MAX_SPEED = 150;
-int MIN_SPEED = -120;
+int MAX_SPEED = 130; // calibrate !
+int MIN_SPEED = -100;
 
 /* Accelerometer */
 LSM303 compass;
@@ -45,6 +45,12 @@ const int trigPin = A1;
 const int echoPin = 13;
 long duration, cm;
 int loopTime = 0;
+int obstacleCounter = 0;
+int turningSpeeds = 130; // calibrate!
+unsigned long previousMillis_obstacle = 0;
+unsigned long currentMillis_obstacle;
+unsigned long timeElapsed_obstacle;
+int lengthObject = 1200;
 
 /*  Detect Stationary */
 int change = 0;
@@ -62,16 +68,19 @@ int previousTime = 1;
 unsigned long previousMillis;
 unsigned long currentMillis;
 unsigned long timeElapsed;
+unsigned long newTimeElapsed = 0;
+bool blackFound = 0;
+int notBlackFoundCounter = 0;
 int errorGap;
 int position;
 unsigned int sensors[6]; //make global for others too
 int gapCounter = 0;
-int maxGap = 1000; // subject to change
+int maxGap = 300; // calibrate! for zigzag
 
 /* S E T U P */
 void setup() {
   /* Ultrasonic Sensor */
-  pinMode(echoPin, OUTPUT);
+  pinMode(echoPin, INPUT);
   pinMode(trigPin, OUTPUT);
   /* LED */
   pinMode(6, OUTPUT);
@@ -128,6 +137,11 @@ void setup() {
 /* M A I N  L O O P */
 
 void loop() {
+
+  /* GAP LOGIC */
+  gap();
+
+  
   /* Obstacle and Ramp Incline Check */
   loopTime++;
   stationaryCheck++;
@@ -136,7 +150,7 @@ void loop() {
 //    compass.read();
 //    changeSpeedBasedOnIncline();
     /* Ultrasonic Sensor */
-//    ultrasonicSensor();
+    ultrasonicSensor();
     loopTime = 0;
   }
   
@@ -161,21 +175,18 @@ void loop() {
     m2Speed = MAX_SPEED;
   
   /* Ramp and Speed Bump Stuck Check */
-  if (stationaryCheck == 800) { // Check every 800 loops
+  if (stationaryCheck == 4000) { // Check every 10000 loops
 //    rampCheck();
-//    speedBumpCheck();
+    speedBumpCheck();
     stationaryCheck = 0;
     totalChange = 0;
   }
-
-  /* GAP LOGIC */
-  gap();
   
   motors.setSpeeds(m1Speed, m2Speed);
   
   /* Color Sensors Check */
   colorRead++;
-  if (colorRead == 15) { // Delay for I2C
+  if (colorRead == 14) { // Delay for I2C
     value_L = readSensor(COLOR_L, 1);
     value_R = readSensor(COLOR_R, 1);
     if (value_L == 2) {
@@ -191,14 +202,14 @@ void loop() {
       if (timeElapsed_L > 700) {
         int check = colorConfirm(COLOR_R);
         if (check == 0) {
-          motors.setSpeeds(150, 150);
-          delay(400);
-          motors.setSpeeds(-180, 180);
-          delay(530);
+          motors.setSpeeds(110, 110);
+          delay(300);
+          motors.setSpeeds(-165, 165);
+          delay(450);
         } else if (check == 1) {
-          motors.setSpeeds(-150, -150);
+          motors.setSpeeds(-130, -130);
           delay(250);
-          motors.setSpeeds(180, -180);
+          motors.setSpeeds(160, -160);
           delay(1300);
         }
       }
@@ -210,23 +221,23 @@ void loop() {
       if (timeElapsed_R > 700) {
         int check = colorConfirm(COLOR_L);
         if (check == 0) {
-          motors.setSpeeds(150, 150);
-          delay(400);
-          motors.setSpeeds(180, -180);
-          delay(530);
+          motors.setSpeeds(110, 110);
+          delay(300);
+          motors.setSpeeds(165, -165);
+          delay(450);
         } else if (check == 1) {
-          motors.setSpeeds(-150, -150);
+          motors.setSpeeds(-130, -130);
           delay(250);
-          motors.setSpeeds(180, -180);
+          motors.setSpeeds(160, -160);
           delay(1300);
         }
       }
     }  
     /* Turn Around */
     if (value_L == 1 && value_R == 1) {
-      motors.setSpeeds(-150, -150);
+      motors.setSpeeds(-130, -130);
       delay(250);
-      motors.setSpeeds(180, -180);
+      motors.setSpeeds(160, -160);
       delay(1300);
     }
     /* Reset Counter */
@@ -276,7 +287,8 @@ int readSensor(const byte command, const int responseSize) { // Read from I2C
 int colorConfirm(const byte command) {
   stopMove();
   int check = 0;
-  for (int i = 1; i < 11; i++) {
+  for (int i = 1; i < 8; i++) {
+    delay(1);
     if (i % 2 == 0) { // Delay for I2C
       check = readSensor(command, 1);
       if (check == 1) {
@@ -290,21 +302,11 @@ int colorConfirm(const byte command) {
 /* Speed Bump Check */
 void speedBumpCheck() {
     /* Hit a speed bump */
-    if (!onIncline && abs(totalChange) < 20) {
-        motors.setSpeeds(-100,-100);
-        delay(500);
-        motors.setSpeeds(100,100);
-        delay(700);
-        motors.setSpeeds(0, -200);
-        delay(450);
-        motors.setSpeeds(-200, 0);
-        delay(800);
-        motors.setSpeeds(100,100);
-        delay(300);
-        motors.setSpeeds(350, 0);
-        delay(450);
-        motors.setSpeeds(0, 350);
-        delay(500);  
+    if (abs(totalChange) < 20) {
+      motors.setSpeeds(-100, -100);
+      delay(500);
+      motors.setSpeeds(MAX_SPEED*1.5, MAX_SPEED*1.5);
+      delay(400);
    }
 }
 
@@ -373,42 +375,97 @@ void ultrasonicSensor() {
     duration = pulseIn(echoPin, HIGH);
     cm = microsecondsToCentimeters(duration);
     Serial.print(cm);
-    if (cm < 18) {
-      digitalWrite(6, HIGH);
-      Stop();
-      delay(100000);
-//      delay(100);
-//      moveRight();
-//      delay(700);
-//      moveForward();
-//      delay(500);
-//      moveLeft();
-//      delay(650);
-//      moveForward();
-//      delay(300);
-//      moveLeft();
-//      delay(500);
-//      moveForward();
-//      delay(100);
-      digitalWrite(6, LOW);
-    } else {
-      digitalWrite(6, LOW);
-    }
+    if (cm < 12 && cm > 4) {
+      previousMillis_obstacle = currentMillis_obstacle;
+      currentMillis_obstacle = millis(); // millis() returns an unsigned long.
+      
+      if (currentMillis_obstacle - previousMillis_obstacle > 3000) {
+        obstacleCounter++;
+        digitalWrite(6, HIGH);
+  
+        if (obstacleCounter == 1) { // calibrate!
+          lengthObject = 1200;
+          obstacleFromLeft();
+        }
+        if (obstacleCounter == 2) {
+          lengthObject = 1700;
+           obstacleFromRight();
+        }
+        else {
+          lengthObject = 1400;
+          obstacleFromLeft();
+        }
+        
+        position = reflectanceSensors.readLine(sensors);
+        errorGap = position - 2500;
+        
+        while (abs(errorGap)==2500){ // while on white, keep going forward
+          moveForward();
+          position = reflectanceSensors.readLine(sensors);
+          errorGap = position - 2500;
+        }
+  
+      } else {
+        digitalWrite(6, LOW);
+      }
+  }
 }
 
 /* Motor */
 
-void moveLeft() {
-   motors.setSpeeds(0, 200);
+void obstacleFromRight() {
+    Stop();
+    delay(1000);
+    moveRight();
+    delay(920);
+    Stop();
+    delay(100);
+    moveForward();
+    delay(800);
+    Stop();
+    delay(100);
+    moveLeft();
+    delay(1100);
+    Stop();
+    delay(100);
+    moveForward();
+    delay(lengthObject);  // main step for length of object (1700 for long), 1400 for short
+    Stop();
+    delay(100);
+    moveLeft();
+    delay(1000);
+    Stop();
+    delay(100);
+    moveForward();
+    delay(500);
+
 }
-void moveForward() {
-  motors.setSpeeds(200,200);
-}
-void moveRight() {
-    motors.setSpeeds(200, 0);
-}
-void Stop() {
-  motors.setSpeeds(0,0);
+
+void obstacleFromLeft() {
+    Stop();
+    delay(1000);
+    moveLeft();
+    delay(920);
+    Stop();
+    delay(100);
+    moveForward();
+    delay(800);
+    Stop();
+    delay(100);
+    moveRight();
+    delay(1200);
+    Stop();
+    delay(100);
+    moveForward();
+    delay(lengthObject);  // main step for length of object (1700 for long), 1400 for short
+    Stop();
+    delay(100);
+    moveRight();
+    delay(1000);
+    Stop();
+    delay(100);
+    moveForward();
+    delay(500);
 }
 
 template <typename T> float heading(LSM303::vector<T> v) {
@@ -471,18 +528,20 @@ void turnAngle(int angle) {
     }
   }
 }
-
 void gap() {
-  if (abs(error) == 2500) {
+  if (abs(error) == 2500) { // detects white
     if (gapCounter == 0) { // calculate first Time
       previousMillis = millis(); // millis() returns an unsigned long.
     }
     gapCounter++;
     
     if (gapCounter > maxGap) { // detected a Gap
+//      Serial.println("greater max gap");
+
+      gapCounter = 0;
       currentMillis = millis(); // grab current time
       timeElapsed = currentMillis - previousMillis;  
-      Serial.println(timeElapsed);
+//      Serial.println(timeElapsed);
       motors.setSpeeds(0,0);
       delay(500);
       
@@ -490,34 +549,143 @@ void gap() {
       
       /* determine if to go left or right */
       if (error > 0) { // turned right
+//          Serial.println("error > 0");
         // make it turn left backwards
           motors.setSpeeds(-MAX_SPEED,-MIN_SPEED);
           delay(timeElapsed);
-          motors.setSpeeds(0,0);
+          motors.setSpeeds(0,0); 
+          delay(200);
+            motors.setSpeeds(-80,-80);
+            delay(100);
+          motors.setSpeeds(0,0); 
+          delay(200);
+
+          position = reflectanceSensors.readLine(sensors);
+          errorGap = position - 2500;
+          
+          /* Check other direction as well */
+//            Serial.println("check other direction");
+//            Serial.print("newTimeElapsed: ");
+//            Serial.print(newTimeElapsed);
+//            Serial.print("abs(errorGap): ");
+//            Serial.print(abs(errorGap));
+
+          previousMillis = millis(); // millis() returns an unsigned long.
+            while (newTimeElapsed < timeElapsed &&  abs(errorGap) == 2500){ // while on white, keep going left
+//              Serial.println("in while loop");
+//              Serial.print("newTimeElapsed: ");
+//              Serial.print(newTimeElapsed);
+//              Serial.print("abs(errorGap): ");
+//              Serial.print(abs(errorGap));
+              
+              currentMillis = millis(); // grab current time
+              newTimeElapsed = currentMillis - previousMillis;
+              motors.setSpeeds(MIN_SPEED, MAX_SPEED);
+              position = reflectanceSensors.readLine(sensors);
+              errorGap = position - 2500;
+          }
+          motors.setSpeeds(0, 0);
+          delay(500);
+
+          if (abs(errorGap) != 2500){
+            blackFound = true;
+          }
+          else {
+            // make it turn right backwards
+            motors.setSpeeds(-MIN_SPEED,-MAX_SPEED);
+            delay(timeElapsed);
+            motors.setSpeeds(0,0); 
+            delay(200);
+            motors.setSpeeds(-80,-80);
+            delay(100);
+            motors.setSpeeds(0,0); 
+            delay(200);
+          }
+          
       }
-      
       else if (error < 0) { // turned left
         // make it turn right backwards
-          motors.setSpeeds(-MIN_SPEED,-MAX_SPEED);
+        motors.setSpeeds(-MIN_SPEED,-MAX_SPEED);
         delay(timeElapsed);
-        motors.setSpeeds(0,0);      
-       }
+        motors.setSpeeds(0,0); 
+        delay(200);
+            motors.setSpeeds(-80,-80);
+            delay(100);
+        motors.setSpeeds(0,0); 
+        delay(200);
+       /* Check other direction as well */
+
+        position = reflectanceSensors.readLine(sensors);
+        errorGap = position - 2500;
+
+        previousMillis = millis(); // millis() returns an unsigned long.
+        while (newTimeElapsed < timeElapsed && abs(errorGap) == 2500){ // while on white, keep going left
+          currentMillis = millis(); // grab current time
+          newTimeElapsed = currentMillis - previousMillis;
+          motors.setSpeeds(MAX_SPEED, MIN_SPEED);
+          position = reflectanceSensors.readLine(sensors);
+          errorGap = position - 2500;
+        }
+         motors.setSpeeds(0, 0);
+         delay(500);
+         
+        if (abs(errorGap) != 2500){
+          blackFound = true;
+        }
+        else {
+          // make it turn left backwards
+            motors.setSpeeds(-MAX_SPEED,-MIN_SPEED);
+            delay(timeElapsed);
+            motors.setSpeeds(0,0);
+            delay(200);
+            motors.setSpeeds(-80,-80);
+            delay(100);
+            motors.setSpeeds(0,0); 
+            delay(200);
+          }
+      }
        
        /* Go Forward Slightly */
        motors.setSpeeds(100,100);      
-       delay(200);
-      
-      position = reflectanceSensors.readLine(sensors);
-      errorGap = position - 2500;
-      while (abs(errorGap)==2500){ // while on white, keep going forward
-        motors.setSpeeds(150, 150);
+       delay(300);
+
+      if (!blackFound) { // Gap detected, go straight
+        notBlackFoundCounter++;
+        if (notBlackFoundCounter > 1){
+          maxGap = 550; // calibrate! for zigzag        
+        }
+        
         position = reflectanceSensors.readLine(sensors);
         errorGap = position - 2500;
+
+        while (abs(errorGap)==2500){ // while on white, keep going forward
+          motors.setSpeeds(190, 100);
+          position = reflectanceSensors.readLine(sensors);
+          errorGap = position - 2500;
+        }
       }
+      
       gapCounter = 0;
+      blackFound = false;
+      newTimeElapsed = 0;
     }
   }
   else {
     gapCounter = 0;
+    blackFound = false;
+    newTimeElapsed = 0;
   }
+}
+
+void moveLeft() {
+   motors.setSpeeds(-turningSpeeds, turningSpeeds);
+}
+void moveForward() {
+  motors.setSpeeds(turningSpeeds,turningSpeeds);
+}
+void moveRight() {
+    motors.setSpeeds(turningSpeeds, -turningSpeeds);
+}
+void Stop() {
+  motors.setSpeeds(0,0);
 }

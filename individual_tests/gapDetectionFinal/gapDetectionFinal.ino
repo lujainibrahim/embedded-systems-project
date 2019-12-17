@@ -47,7 +47,7 @@ bool blackFound = 0;
 int notBlackFoundCounter = 0;
 int errorGap;
 int error;
-int position;
+//int position;
 unsigned int sensors[6]; //make global for others too
 
 void setup()
