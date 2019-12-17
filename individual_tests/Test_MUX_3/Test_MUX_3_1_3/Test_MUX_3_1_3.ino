@@ -175,7 +175,7 @@ void loop() {
     m2Speed = MAX_SPEED;
   
   /* Ramp and Speed Bump Stuck Check */
-  if (stationaryCheck == 4000) { // Check every 10000 loops
+  if (stationaryCheck == 4000) { // Check every 4000 loops
 //    rampCheck();
     speedBumpCheck();
     stationaryCheck = 0;
