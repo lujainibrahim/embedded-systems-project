@@ -89,6 +89,7 @@ void setup() {
     /* I2C */
   Wire.begin(ADDR_1);
   /* Accelerometer */
+  /* This was no longer used! */
 //  LSM303::vector<int16_t> running_min = {32767, 32767, 32767}, running_max = {-32767, -32767, -32767};
 //  unsigned char index;
 //  compass.init();
@@ -137,16 +138,15 @@ void setup() {
 /* M A I N  L O O P */
 
 void loop() {
-
-  /* GAP LOGIC */
+  /* Gap Logic */
   gap();
 
-  
   /* Obstacle and Ramp Incline Check */
   loopTime++;
   stationaryCheck++;
   if (loopTime == 100) { 
     /* Incline and Accelerometer */
+    /* This was no longer used! */
 //    compass.read();
 //    changeSpeedBasedOnIncline();
     /* Ultrasonic Sensor */
@@ -155,13 +155,12 @@ void loop() {
   }
   
   /* Line Follower */
-
-  position = reflectanceSensors.readLine(sensors);
+  position = reflectanceSensors.readLine(sensors); // Determine the position of the black line
   prevError = error;
-  error = position - 2500;
+  error = position - 2500; // Calculate the error for PID
   change = abs(error) - abs(prevError);
   totalChange += change;
-  int speedDifference = error / 4 + 6 * (error - lastError);
+  int speedDifference = error / 4 + 6 * (error - lastError); // PID calcuation
   lastError = error;  
   int m1Speed = MAX_SPEED + speedDifference;
   int m2Speed = MAX_SPEED - speedDifference;
@@ -177,36 +176,38 @@ void loop() {
   /* Ramp and Speed Bump Stuck Check */
   if (stationaryCheck == 4000) { // Check every 4000 loops
 //    rampCheck();
-    speedBumpCheck();
+    speedBumpCheck(); // Determines if the robot is stuck due to a speed bump
     stationaryCheck = 0;
     totalChange = 0;
   }
-  
   motors.setSpeeds(m1Speed, m2Speed);
   
   /* Color Sensors Check */
+  // Green = 1
+  // Black = 2
+  // None = 0
   colorRead++;
-  if (colorRead == 14) { // Delay for I2C
-    value_L = readSensor(COLOR_L, 1);
-    value_R = readSensor(COLOR_R, 1);
-    if (value_L == 2) {
+  if (colorRead == 15) { // Delay for I2C
+    value_L = readSensor(COLOR_L, 1); // Read left color sensor
+    value_R = readSensor(COLOR_R, 1); // Read right color sensor
+    if (value_L == 2) { // Check for black on the left
       previousMillis_L = millis();
     }
-    if (value_R == 2) {
+    if (value_R == 2) { // Check for black on the right
       previousMillis_R = millis();
     }
     /* Left Turn */
     if (value_L == 1 && value_R == 0) {
       currentMillis_L = millis();
       timeElapsed_L = currentMillis_L - previousMillis_L;
-      if (timeElapsed_L > 700) {
-        int check = colorConfirm(COLOR_R);
-        if (check == 0) {
+      if (timeElapsed_L > 700) { // This is to ensure that the green square is before the black line
+        int check = colorConfirm(COLOR_R); // Check to see if there is a green square on the right
+        if (check == 0) { // No green square found
           motors.setSpeeds(110, 110);
           delay(300);
           motors.setSpeeds(-165, 165);
           delay(450);
-        } else if (check == 1) {
+        } else if (check == 1) { // Green square found; Turn around!
           motors.setSpeeds(-130, -130);
           delay(250);
           motors.setSpeeds(160, -160);
@@ -218,14 +219,14 @@ void loop() {
     if (value_L == 0 && value_R == 1) {
       currentMillis_R = millis();
       timeElapsed_R = currentMillis_R - previousMillis_R;
-      if (timeElapsed_R > 700) {
-        int check = colorConfirm(COLOR_L);
-        if (check == 0) {
+      if (timeElapsed_R > 700) { // This is to ensure that the green square is before the black line
+        int check = colorConfirm(COLOR_L); // Check to see if there is a green square on the left
+        if (check == 0) { // No green square found
           motors.setSpeeds(110, 110);
           delay(300);
           motors.setSpeeds(165, -165);
           delay(450);
-        } else if (check == 1) {
+        } else if (check == 1) { // Green square found; Turn around!
           motors.setSpeeds(-130, -130);
           delay(250);
           motors.setSpeeds(160, -160);
@@ -247,7 +248,7 @@ void loop() {
 
 /* F U N C T I O N S */
 
-void turnSide(char signal, int t1, int t2, int turnValue) { // ~90° Movement
+void turnSide(char signal, int t1, int t2, int turnValue) { // Hard-Coded ~90° Movement
   int m1Speed, m2Speed;
   if (signal == 'L') {
     m1Speed = 0;
@@ -261,7 +262,7 @@ void turnSide(char signal, int t1, int t2, int turnValue) { // ~90° Movement
   delay(t2);
 }
 
-void turnAround(int t1, int t2, int turnValue) { // ~180° Movement
+void turnAround(int t1, int t2, int turnValue) { // Hard-Coded ~180° Movement
   motors.setSpeeds(-turnValue, 0);
   delay(t1);
   motors.setSpeeds(0, turnValue);
@@ -284,7 +285,7 @@ int readSensor(const byte command, const int responseSize) { // Read from I2C
   return value;
 }
 
-int colorConfirm(const byte command) {
+int colorConfirm(const byte command) { // Check for a green square
   stopMove();
   int check = 0;
   for (int i = 1; i < 8; i++) {
