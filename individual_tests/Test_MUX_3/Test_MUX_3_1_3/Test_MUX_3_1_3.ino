@@ -383,17 +383,11 @@ void ultrasonicSensor() {
         obstacleCounter++;
         digitalWrite(6, HIGH);
   
-        if (obstacleCounter == 1) { // calibrate!
-          lengthObject = 1200;
+        if (obstacleCounter % 2 == 0) { // calibrate !
           obstacleFromLeft();
-        }
-        if (obstacleCounter == 2) {
-          lengthObject = 1700;
-           obstacleFromRight();
         }
         else {
-          lengthObject = 1400;
-          obstacleFromLeft();
+          obstacleFromRight();
         }
         
         position = reflectanceSensors.readLine(sensors);
